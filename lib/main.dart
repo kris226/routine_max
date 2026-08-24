@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
+import 'models/routine_preset.dart';
+import 'models/habit_item.dart';
+import 'models/day_record.dart';
+import 'services/storage_service.dart';
+import 'screens/daily_routine_screen.dart';
+import 'screens/calendar_screen.dart';
+import 'screens/account_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const RoutineMaxApp());
 }
 
@@ -12,16 +21,9 @@ class RoutineMaxApp extends StatelessWidget {
     return MaterialApp(
       title: 'RoutineMax',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
-        primaryColor: const Color(0xFF6366F1),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF6366F1),
-          surface: Color(0xFF1E293B),
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
       home: const MainNavigationScreen(),
     );
   }
@@ -34,223 +36,294 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
+class _MainNavigationScreenState extends State<MainNavigationScreen> with WidgetsBindingObserver {
+  int _selectedIndex = 2;
+  bool _isLoading = true;
+  DateTime _lastCheckedDate = DateTime.now();
+  late PageController _pageController;
 
-  final List<Widget> _screens = [
-    const DailyRoutineScreen(),
-    const GroupFeedPlaceholderScreen(),
-    const ProfilePlaceholderScreen(),
+  List<RoutinePreset> _presets = [
+    RoutinePreset(
+      id: '1',
+      name: 'Daily Grind',
+      activeDays: [1, 2, 3, 4, 5, 6, 7],
+      habits: [
+        HabitItem(id: '1', title: "Muscle Ups - 10 mins"),
+        HabitItem(id: '2', title: "Math practice - 10 mins"),
+        HabitItem(id: '3', title: "Read 10 pages"),
+        HabitItem(id: '4', title: "Cold shower"),
+      ],
+    ),
   ];
 
+  Map<DateTime, DayRecord> _history = {};
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        backgroundColor: const Color(0xFF1E293B),
-        indicatorColor: const Color(0xFF6366F1).withOpacity(0.3),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.check_circle_outline),
-            selectedIcon: Icon(Icons.check_circle, color: Color(0xFF6366F1)),
-            label: 'Routine',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.group_outlined),
-            selectedIcon: Icon(Icons.group, color: Color(0xFF6366F1)),
-            label: 'Group',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person, color: Color(0xFF6366F1)),
-            label: 'Profile',
-          ),
-        ],
-      ),
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
+    WidgetsBinding.instance.addObserver(this);
+    _loadAllData();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _onTabTapped(int index) {
+    setState(() => _selectedIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
     );
   }
-}
-
-class HabitItem {
-  String title;
-  bool isCompleted;
-
-  HabitItem({required this.title, this.isCompleted = false});
-}
-
-class DailyRoutineScreen extends StatefulWidget {
-  const DailyRoutineScreen({super.key});
 
   @override
-  State<DailyRoutineScreen> createState() => _DailyRoutineScreenState();
-}
-
-class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
-  final List<HabitItem> _habits = [
-    HabitItem(title: "Muscle Ups - 10 mins"),
-    HabitItem(title: "Math practice - 10 mins"),
-    HabitItem(title: "Read 10 pages"),
-    HabitItem(title: "Cold shower"),
-  ];
-
-  final TextEditingController _noteController = TextEditingController();
-
-  double get _completionPercentage {
-    if (_habits.isEmpty) return 0.0;
-    int completed = _habits.where((h) => h.isCompleted).length;
-    return (completed / _habits.length) * 100;
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAndHandleRollover();
+    }
   }
 
-  bool get _isPerfectDay => _habits.isNotEmpty && _completionPercentage == 100.0;
+  void _checkAndHandleRollover() {
+    final now = DateTime.now();
+    final isNewDay = now.day != _lastCheckedDate.day ||
+        now.month != _lastCheckedDate.month ||
+        now.year != _lastCheckedDate.year;
+
+    if (isNewDay) {
+      _lastCheckedDate = now;
+      _performDailyRollover();
+    }
+  }
+
+  void _performDailyRollover() {
+    for (var preset in _presets) {
+      for (var habit in preset.habits) {
+        habit.isCompleted = false;
+      }
+    }
+    StorageService.savePresets(_presets);
+    StorageService.saveLastCheckedDate(_lastCheckedDate);
+    setState(() {});
+  }
+
+  Future<void> _loadAllData() async {
+    final savedPresets = await StorageService.loadPresets();
+    final savedHistory = await StorageService.loadHistory();
+    final savedLastChecked = await StorageService.loadLastCheckedDate();
+
+    List<RoutinePreset> activePresets = (savedPresets != null && savedPresets.isNotEmpty)
+        ? savedPresets
+        : _presets;
+
+    Map<DateTime, DayRecord> activeHistory = savedHistory;
+
+    final now = DateTime.now();
+    final isNewDay = savedLastChecked == null ||
+        savedLastChecked.day != now.day ||
+        savedLastChecked.month != now.month ||
+        savedLastChecked.year != now.year;
+
+    if (isNewDay) {
+      for (var preset in activePresets) {
+        for (var habit in preset.habits) {
+          habit.isCompleted = false;
+        }
+      }
+      await StorageService.savePresets(activePresets);
+    }
+
+    _lastCheckedDate = now;
+    await StorageService.saveLastCheckedDate(now);
+
+    setState(() {
+      _presets = activePresets;
+      _history = activeHistory;
+      _isLoading = false;
+    });
+  }
+
+  void _updatePresets(List<RoutinePreset> updated) {
+    setState(() {
+      _presets = updated;
+    });
+    StorageService.savePresets(_presets);
+
+    final now = DateTime.now();
+    final todayWeekday = now.weekday;
+    RoutinePreset? todayPreset;
+
+    try {
+      todayPreset = _presets.firstWhere((p) => p.activeDays.contains(todayWeekday));
+    } catch (_) {
+      todayPreset = null;
+    }
+
+    if (todayPreset == null) {
+      _updateTodayCompletion(-1.0);
+    } else {
+      final activeHabits = todayPreset.habits.where((h) => !h.isGraduated).toList();
+      _updateTodayCompletion(calculateWeightedCompletion(activeHabits));
+    }
+  }
+
+  void _updateTodayCompletion(double percentage) {
+    final now = DateTime.now();
+    final todayClean = DateTime.utc(now.year, now.month, now.day);
+
+    final todayWeekday = now.weekday;
+    RoutinePreset? todayPreset;
+    try {
+      todayPreset = _presets.firstWhere((p) => p.activeDays.contains(todayWeekday));
+    } catch (_) {
+      todayPreset = null;
+    }
+
+    final activeHabits = todayPreset?.habits.where((h) => !h.isGraduated).toList() ?? [];
+    final safePercentage = (todayPreset == null || activeHabits.isEmpty) ? -1.0 : percentage;
+
+    final habitSnapshots = activeHabits
+        .map((h) => HabitItem(
+              id: h.id,
+              title: h.title,
+              isCompleted: h.isCompleted,
+              isSkill: h.isSkill,
+              skillName: h.skillName,
+              isGraduated: h.isGraduated,
+              importanceWeight: h.importanceWeight,
+            ))
+        .toList();
+
+    final existingNote = _history[todayClean]?.note ?? '';
+
+    setState(() {
+      _history[todayClean] = DayRecord(
+        date: todayClean,
+        completionPercentage: safePercentage,
+        habits: habitSnapshots,
+        note: existingNote,
+      );
+    });
+
+    StorageService.saveHistory(_history);
+    StorageService.savePresets(_presets);
+  }
+
+  void _updateTodayNote(String note) {
+    final now = DateTime.now();
+    final todayClean = DateTime.utc(now.year, now.month, now.day);
+
+    final existingRecord = _history[todayClean];
+
+    setState(() {
+      _history[todayClean] = DayRecord(
+        date: todayClean,
+        completionPercentage: existingRecord?.completionPercentage ?? -1.0,
+        habits: existingRecord?.habits ?? [],
+        note: note,
+      );
+    });
+
+    StorageService.saveHistory(_history);
+  }
+
+  // --- REST DAY ---
+  bool get _todayHasRoutine {
+    final todayWeekday = DateTime.now().weekday;
+    return _presets.any((p) => p.activeDays.contains(todayWeekday));
+  }
+
+  bool get _isRestDayToday {
+    final now = DateTime.now();
+    final todayClean = DateTime.utc(now.year, now.month, now.day);
+    return _todayHasRoutine && (_history[todayClean]?.completionPercentage == -1.0);
+  }
+
+  void _setRestDay(bool isRest) {
+    final now = DateTime.now();
+    final todayClean = DateTime.utc(now.year, now.month, now.day);
+    final existingNote = _history[todayClean]?.note ?? '';
+
+    if (isRest) {
+      setState(() {
+        _history[todayClean] = DayRecord(
+          date: todayClean,
+          completionPercentage: -1.0,
+          habits: [],
+          note: existingNote,
+        );
+      });
+      StorageService.saveHistory(_history);
+    } else {
+      final todayWeekday = now.weekday;
+      RoutinePreset? todayPreset;
+      try {
+        todayPreset = _presets.firstWhere((p) => p.activeDays.contains(todayWeekday));
+      } catch (_) {
+        todayPreset = null;
+      }
+      final activeHabits = todayPreset?.habits.where((h) => !h.isGraduated).toList() ?? [];
+      _updateTodayCompletion(calculateWeightedCompletion(activeHabits));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ROUTINEMAX',
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
-        ),
-        backgroundColor: Colors.transparent,
-        centerTitle: true,
-        elevation: 0,
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))),
+      );
+    }
+
+    final List<Widget> screens = [
+      AccountScreen(history: _history, presets: _presets),
+      CalendarScreen(history: _history),
+      DailyRoutineScreen(
+        presets: _presets,
+        history: _history,
+        onPresetsChanged: _updatePresets,
+        onCompletionChanged: _updateTodayCompletion,
+        onNoteSaved: _updateTodayNote,
+        isRestDayToday: _isRestDayToday,
+        onRestDayToggled: _setRestDay,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      const Center(child: Text("5-Person Group Feed\n(Coming Soon)")),
+      const Center(child: Text("Settings & App Setup\n(Coming Soon)")),
+    ];
+
+    return Scaffold(
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: screens,
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: _isPerfectDay
-                      ? const Color(0xFF059669)
-                      : const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _isPerfectDay
-                        ? const Color(0xFF10B981)
-                        : Colors.white12,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      _isPerfectDay ? "PERFECT DAY!" : "TODAY'S SCORE",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _isPerfectDay ? Colors.white : Colors.grey[400],
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "${_completionPercentage.round()}%",
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                    if (_isPerfectDay)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          "🔥 Perfect Day Streak Secured!",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Daily Tasks",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle, color: Color(0xFF6366F1)),
-                    onPressed: _showAddTaskDialog,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _habits.length,
-                  itemBuilder: (context, index) {
-                    final habit = _habits[index];
-                    return Card(
-                      color: const Color(0xFF1E293B),
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: Checkbox(
-                          value: habit.isCompleted,
-                          activeColor: const Color(0xFF6366F1),
-                          onChanged: (bool? value) {
-                            setState(() {
-                              habit.isCompleted = value ?? false;
-                            });
-                          },
-                        ),
-                        title: Text(
-                          habit.title,
-                          style: TextStyle(
-                            decoration: habit.isCompleted
-                                ? TextDecoration.lineThrough
-                                : TextDecoration.none,
-                            color: habit.isCompleted
-                                ? Colors.grey
-                                : Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: TextField(
-                  controller: _noteController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: "Daily note: How did today's execution feel?",
-                    hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                    border: InputBorder.none,
-                  ),
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ),
+              _buildNavItem(index: 0, icon: Icons.person_rounded, label: 'Account'),
+              _buildNavItem(index: 1, icon: Icons.calendar_month_rounded, label: 'Calendar'),
+              _buildNavItem(index: 2, icon: Icons.check_circle_rounded, label: 'Routine', iconSize: 32),
+              _buildNavItem(index: 3, icon: Icons.group_rounded, label: 'Group'),
+              _buildNavItem(index: 4, icon: Icons.settings_rounded, label: 'Settings'),
             ],
           ),
         ),
@@ -258,76 +331,37 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
     );
   }
 
-  void _showAddTaskDialog() {
-    TextEditingController taskController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
-          title: const Text("Add New Habit"),
-          content: TextField(
-            controller: taskController,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: "e.g., Read 15 mins",
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required String label,
+    double iconSize = 24,
+  }) {
+    final isSelected = _selectedIndex == index;
+    const activeColor = Color(0xFF2563EB);
+    final inactiveColor = Colors.grey.shade400;
+
+    return GestureDetector(
+      onTap: () => _onTabTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? activeColor : inactiveColor,
+            size: iconSize,
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? activeColor : inactiveColor,
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-              ),
-              onPressed: () {
-                if (taskController.text.trim().isNotEmpty) {
-                  setState(() {
-                    _habits.add(HabitItem(title: taskController.text.trim()));
-                  });
-                }
-                Navigator.pop(context);
-              },
-              child: const Text("Add", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class GroupFeedPlaceholderScreen extends StatelessWidget {
-  const GroupFeedPlaceholderScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          "5-Person Group Feed\n(Coming Soon)",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18, color: Colors.grey),
-        ),
-      ),
-    );
-  }
-}
-
-class ProfilePlaceholderScreen extends StatelessWidget {
-  const ProfilePlaceholderScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text(
-          "User Profile & History\n(Coming Soon)",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18, color: Colors.grey),
-        ),
+        ],
       ),
     );
   }
