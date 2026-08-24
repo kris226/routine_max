@@ -6,6 +6,7 @@ import 'services/storage_service.dart';
 import 'screens/daily_routine_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/account_screen.dart';
+import 'screens/settings_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -13,8 +14,32 @@ void main() {
   runApp(const RoutineMaxApp());
 }
 
-class RoutineMaxApp extends StatelessWidget {
+class RoutineMaxApp extends StatefulWidget {
   const RoutineMaxApp({super.key});
+
+  @override
+  State<RoutineMaxApp> createState() => _RoutineMaxAppState();
+}
+
+class _RoutineMaxAppState extends State<RoutineMaxApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  @override
+  void initState() {
+    super.initState();
+    StorageService.loadThemeMode().then((isDark) {
+      setState(() {
+        _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      });
+    });
+  }
+
+  void _setThemeMode(bool isDark) {
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+    StorageService.saveThemeMode(isDark);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,14 +48,24 @@ class RoutineMaxApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
-      home: const MainNavigationScreen(),
+      themeMode: _themeMode,
+      home: MainNavigationScreen(
+        isDarkMode: _themeMode == ThemeMode.dark,
+        onThemeChanged: _setThemeMode,
+      ),
     );
   }
 }
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final bool isDarkMode;
+  final Function(bool) onThemeChanged;
+
+  const MainNavigationScreen({
+    super.key,
+    required this.isDarkMode,
+    required this.onThemeChanged,
+  });
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -40,6 +75,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   int _selectedIndex = 2;
   bool _isLoading = true;
   DateTime _lastCheckedDate = DateTime.now();
+  double _targetPercentage = 80.0;
   late PageController _pageController;
 
   List<RoutinePreset> _presets = [
@@ -116,6 +152,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     final savedPresets = await StorageService.loadPresets();
     final savedHistory = await StorageService.loadHistory();
     final savedLastChecked = await StorageService.loadLastCheckedDate();
+    final savedTarget = await StorageService.loadTargetPercentage();
 
     List<RoutinePreset> activePresets = (savedPresets != null && savedPresets.isNotEmpty)
         ? savedPresets
@@ -144,8 +181,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     setState(() {
       _presets = activePresets;
       _history = activeHistory;
+      _targetPercentage = savedTarget;
       _isLoading = false;
     });
+  }
+
+  void _setTargetPercentage(double target) {
+    setState(() {
+      _targetPercentage = target;
+    });
+    StorageService.saveTargetPercentage(target);
   }
 
   void _updatePresets(List<RoutinePreset> updated) {
@@ -232,7 +277,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     StorageService.saveHistory(_history);
   }
 
-  // --- REST DAY ---
   bool get _todayHasRoutine {
     final todayWeekday = DateTime.now().weekday;
     return _presets.any((p) => p.activeDays.contains(todayWeekday));
@@ -281,7 +325,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     }
 
     final List<Widget> screens = [
-      AccountScreen(history: _history, presets: _presets),
+      AccountScreen(
+        history: _history,
+        presets: _presets,
+        onPresetsChanged: _updatePresets,
+        targetPercentage: _targetPercentage,
+      ),
       CalendarScreen(history: _history),
       DailyRoutineScreen(
         presets: _presets,
@@ -291,9 +340,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
         onNoteSaved: _updateTodayNote,
         isRestDayToday: _isRestDayToday,
         onRestDayToggled: _setRestDay,
+        targetPercentage: _targetPercentage,
       ),
       const Center(child: Text("5-Person Group Feed\n(Coming Soon)")),
-      const Center(child: Text("Settings & App Setup\n(Coming Soon)")),
+      SettingsScreen(
+        isDarkMode: widget.isDarkMode,
+        targetPercentage: _targetPercentage,
+        onThemeChanged: widget.onThemeChanged,
+        onTargetChanged: _setTargetPercentage,
+      ),
     ];
 
     return Scaffold(

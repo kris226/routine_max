@@ -8,11 +8,15 @@ import '../widgets/animated_progress_bar.dart';
 class AccountScreen extends StatefulWidget {
   final Map<DateTime, DayRecord> history;
   final List<RoutinePreset> presets;
+  final Function(List<RoutinePreset>)? onPresetsChanged;
+  final double targetPercentage;
 
   const AccountScreen({
     super.key,
     required this.history,
     required this.presets,
+    this.onPresetsChanged,
+    this.targetPercentage = 80.0,
   });
 
   @override
@@ -21,8 +25,6 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   int _selectedTab = 0; // 0 = Overview, 1 = Analytics
-
-  // --- GENERAL STATS CALCULATIONS ---
 
   int get _totalHabitsCompleted {
     int total = 0;
@@ -38,16 +40,15 @@ class _AccountScreenState extends State<AccountScreen> {
     return widget.history.values.where((r) => r.completionPercentage >= 100).length;
   }
 
-   int get _currentStreak =>
-      StreakUtils.currentStreak(widget.history, (r) => r.completionPercentage >= 80);
+  int get _currentStreak =>
+      StreakUtils.currentStreak(widget.history, (r) => r.completionPercentage >= widget.targetPercentage);
 
-   int get _bestStreak =>
-      StreakUtils.bestStreak(widget.history, (r) => r.completionPercentage >= 80);
+  int get _bestStreak =>
+      StreakUtils.bestStreak(widget.history, (r) => r.completionPercentage >= widget.targetPercentage);
 
   double get _lifetimeConsistencyRate {
     final activeDays = widget.history.values.where((r) => r.completionPercentage >= 0).toList();
     if (activeDays.isEmpty) return 0.0;
-
     final totalPercentage = activeDays.fold(0.0, (sum, r) => sum + r.completionPercentage);
     return totalPercentage / activeDays.length;
   }
@@ -68,8 +69,73 @@ class _AccountScreenState extends State<AccountScreen> {
     return skills;
   }
 
-  // --- ANALYTICS TAB COMPUTATIONS ---
+  // --- SKILL VAULT ACTIONS ---
+  void _renameSkill(HabitItem habit) {
+    final controller = TextEditingController(text: habit.skillName.isNotEmpty ? habit.skillName : habit.title);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Rename Skill"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: "Skill Name", border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+            onPressed: () {
+              final newName = controller.text.trim();
+              if (newName.isEmpty) return;
+              setState(() {
+                habit.skillName = newName;
+              });
+              widget.onPresetsChanged?.call(widget.presets);
+              Navigator.pop(context);
+            },
+            child: const Text("Save", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
+  void _deleteSkill(HabitItem habit) {
+    final displayName = habit.skillName.isNotEmpty ? habit.skillName : habit.title;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Delete Trophy?"),
+        content: Text("'$displayName' and its habit will be permanently removed. This can't be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              setState(() {
+                for (var preset in widget.presets) {
+                  preset.habits.removeWhere((h) => h.id == habit.id);
+                }
+              });
+              widget.onPresetsChanged?.call(widget.presets);
+              Navigator.pop(context);
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- ANALYTICS TAB COMPUTATIONS ---
   List<Map<String, dynamic>> get _habitMatrix {
     final Map<String, int> timesCompleted = {};
     final Map<String, int> timesScheduled = {};
@@ -85,12 +151,10 @@ class _AccountScreenState extends State<AccountScreen> {
 
       for (var h in record.habits) {
         timesScheduled[h.title] = (timesScheduled[h.title] ?? 0) + 1;
-
         if (h.isCompleted) {
           timesCompleted[h.title] = (timesCompleted[h.title] ?? 0) + 1;
           tempStreaks[h.title] = (tempStreaks[h.title] ?? 0) + 1;
           currentStreaks[h.title] = tempStreaks[h.title]!;
-
           if (tempStreaks[h.title]! > (maxStreaks[h.title] ?? 0)) {
             maxStreaks[h.title] = tempStreaks[h.title]!;
           }
@@ -156,7 +220,6 @@ class _AccountScreenState extends State<AccountScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Tab Toggle
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -171,7 +234,6 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
             if (_selectedTab == 0) _buildOverviewTab() else _buildAnalyticsTab(),
           ],
         ),
@@ -207,7 +269,6 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  // --- OVERVIEW TAB ---
   Widget _buildOverviewTab() {
     final unlocked = _unlockedSkills;
     final consistency = _lifetimeConsistencyRate;
@@ -215,7 +276,6 @@ class _AccountScreenState extends State<AccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Level Profile Card
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -279,8 +339,6 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
         const SizedBox(height: 20),
-
-        // Grid Metrics
         Row(
           children: [
             _buildStatCard("Current Streak", "$_currentStreak d", Icons.local_fire_department_rounded, Colors.orange),
@@ -299,8 +357,6 @@ class _AccountScreenState extends State<AccountScreen> {
           ],
         ),
         const SizedBox(height: 24),
-
-        // Skill Vault
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -352,14 +408,34 @@ class _AccountScreenState extends State<AccountScreen> {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.amber.shade300, width: 1.5),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
                   children: [
-                    const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 30),
-                    const SizedBox(height: 6),
-                    Text(skill.skillName.isNotEmpty ? skill.skillName : skill.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
-                    const SizedBox(height: 2),
-                    const Text("UNLOCKED 🏆", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.amber)),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 30),
+                        const SizedBox(height: 6),
+                        Text(skill.skillName.isNotEmpty ? skill.skillName : skill.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+                        const SizedBox(height: 2),
+                        const Text("UNLOCKED 🏆", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.amber)),
+                      ],
+                    ),
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.grey, size: 18),
+                        padding: EdgeInsets.zero,
+                        onSelected: (value) {
+                          if (value == 'rename') _renameSkill(skill);
+                          if (value == 'delete') _deleteSkill(skill);
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'rename', child: Text("✏️ Rename")),
+                          const PopupMenuItem(value: 'delete', child: Text("🗑️ Delete")),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -369,7 +445,6 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  // --- ANALYTICS TAB ---
   Widget _buildAnalyticsTab() {
     final matrix = _habitMatrix;
     final dayAverages = _dayOfWeekAverages;
@@ -378,7 +453,6 @@ class _AccountScreenState extends State<AccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Heatmap
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -400,7 +474,6 @@ class _AccountScreenState extends State<AccountScreen> {
                   final dayId = index + 1;
                   final avg = dayAverages[dayId] ?? 0.0;
                   final heightFactor = (avg / 100).clamp(0.05, 1.0);
-
                   Color barColor = const Color(0xFF2563EB);
                   if (avg < 50) barColor = Colors.orange;
                   if (avg == 0) barColor = Colors.grey.shade300;
@@ -429,11 +502,8 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
         const SizedBox(height: 20),
-
-        // Habit Matrix Breakdown
         const Text("Habit Consistency Matrix", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
         const SizedBox(height: 12),
-
         if (matrix.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
@@ -449,7 +519,6 @@ class _AccountScreenState extends State<AccountScreen> {
             itemBuilder: (context, index) {
               final item = matrix[index];
               final rate = item['rate'] as double;
-
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),

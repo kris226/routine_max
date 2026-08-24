@@ -68,4 +68,29 @@ class StorageService {
     if (raw == null) return null;
     return DateTime.parse(raw);
   }
+
+
+
+    static const String _themeModeKey = 'theme_mode';
+  static const String _targetPercentageKey = 'target_percentage';
+
+  static Future<void> saveThemeMode(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_themeModeKey, isDark);
+  }
+
+  static Future<bool> loadThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_themeModeKey) ?? false;
+  }
+
+  static Future<void> saveTargetPercentage(double target) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_targetPercentageKey, target);
+  }
+
+  static Future<double> loadTargetPercentage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(_targetPercentageKey) ?? 80.0;
+  }
 }

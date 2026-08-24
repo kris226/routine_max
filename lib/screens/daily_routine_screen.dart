@@ -12,6 +12,7 @@ class DailyRoutineScreen extends StatefulWidget {
   final Function(String)? onNoteSaved;
   final bool isRestDayToday;
   final Function(bool)? onRestDayToggled;
+  final double targetPercentage;
 
   const DailyRoutineScreen({
     super.key,
@@ -22,6 +23,7 @@ class DailyRoutineScreen extends StatefulWidget {
     this.onNoteSaved,
     this.isRestDayToday = false,
     this.onRestDayToggled,
+    this.targetPercentage = 80.0,
   });
 
   @override
@@ -156,7 +158,7 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
     final todayRoutine = _todayRoutine;
     final habits = _activeHabits;
     final score = _weightedCompletionPercentage;
-    final isTargetMet = score >= 80;
+    final isTargetMet = score >= widget.targetPercentage;
     final cardColor = _getScoreColor(score);
     final isResting = widget.isRestDayToday;
 
@@ -271,7 +273,7 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                isTargetMet ? "Target Hit! (80%+ Goal)" : "Target: 80% to keep streak",
+                              isTargetMet ? "Target Hit! (${widget.targetPercentage.toInt()}%+ Goal)" : "Target: ${widget.targetPercentage.toInt()}% to keep streak",
                                 style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13),
                               ),
                             ],
