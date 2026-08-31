@@ -3,6 +3,7 @@ import '../models/routine_preset.dart';
 import '../models/habit_item.dart';
 import '../models/day_record.dart';
 import 'manage_routines_screen.dart';
+import '../theme/app_theme.dart';
 
 class DailyRoutineScreen extends StatefulWidget {
   final List<RoutinePreset> presets;
@@ -163,7 +164,7 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
     final isResting = widget.isRestDayToday;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppTheme.background(context),
       appBar: AppBar(
         title: const Text(
           "DAILY ROUTINE",
@@ -326,7 +327,7 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
                     ),
                   ),
                 const SizedBox(height: 12),
-                const Text("Today's Tasks", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E293B))),
+              Text("Today's Tasks", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.textPrimary(context))),
                 const SizedBox(height: 12),
                 if (todayRoutine == null || habits.isEmpty)
                   const Padding(
@@ -343,9 +344,9 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppTheme.cardColor(context),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.grey.shade200, width: 1.0),
+                          border: Border.all(color: AppTheme.cardBorder(context), width: 1.0),
                         ),
                         child: ListTile(
                           onTap: () => _toggleHabit(habit),
@@ -363,7 +364,7 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     decoration: habit.isCompleted ? TextDecoration.lineThrough : null,
-                                    color: habit.isCompleted ? Colors.grey : Colors.black87,
+                                  color: habit.isCompleted ? Colors.grey : AppTheme.textPrimary(context),
                                   ),
                                 ),
                               ),
@@ -412,9 +413,9 @@ class _DailyRoutineScreenState extends State<DailyRoutineScreen> {
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.cardColor(context),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 padding: const EdgeInsets.all(12),
                 child: Column(

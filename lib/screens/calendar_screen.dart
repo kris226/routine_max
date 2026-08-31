@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/day_record.dart';
 import '../utils/streak_utils.dart';
+import '../theme/app_theme.dart';
 
 class CalendarScreen extends StatefulWidget {
   final Map<DateTime, DayRecord> history;
@@ -52,7 +53,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.cardColor(context),
       builder: (context) {
         if (record == null) {
           return Padding(
@@ -108,7 +109,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const SizedBox(height: 6),
                   Text(
                     isNeutral ? "No habits scheduled." : "$completedCount of ${record.habits.length} completed",
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    style: TextStyle(color: AppTheme.textSecondary(context), fontSize: 13),
                   ),
                   const Divider(height: 24),
                   if (!isNeutral)
@@ -136,7 +137,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                   if (record.note.isNotEmpty) ...[
                     const Divider(height: 24),
-                    Text("Daily Note:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                    Text("Daily Note:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textSecondary(context))),
                     const SizedBox(height: 4),
                     Text(record.note, style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic)),
                   ],
@@ -160,9 +161,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.cardColor(context),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.black.withOpacity(0.08)),
+          border: Border.all(color: AppTheme.cardBorder(context)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
@@ -180,14 +181,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 const SizedBox(width: 6),
                 Text(
                   title,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary(context)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               countText,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              style:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context)),
             ),
             const SizedBox(height: 2),
             Text(
@@ -246,11 +247,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppTheme.background(context),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "HISTORY & STREAKS",
-          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w900, letterSpacing: 0.8),
+          style: TextStyle(color: AppTheme.textPrimary(context), fontWeight: FontWeight.w900, letterSpacing: 0.8),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -285,9 +286,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             // --- CALENDAR CARD ---
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.cardColor(context),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.black.withOpacity(0.08)),
+                border: Border.all(color: AppTheme.cardBorder(context)),
               ),
               padding: const EdgeInsets.all(8),
               child: TableCalendar(

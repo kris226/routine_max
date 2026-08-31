@@ -4,6 +4,7 @@ import '../models/routine_preset.dart';
 import '../models/habit_item.dart';
 import '../utils/streak_utils.dart';
 import '../widgets/animated_progress_bar.dart';
+import '../theme/app_theme.dart';
 
 class AccountScreen extends StatefulWidget {
   final Map<DateTime, DayRecord> history;
@@ -206,11 +207,11 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppTheme.background(context),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "PROFILE & STATS",
-          style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w900, letterSpacing: 0.8),
+          style: TextStyle(color: AppTheme.textPrimary(context), fontWeight: FontWeight.w900, letterSpacing: 0.8),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -223,7 +224,7 @@ class _AccountScreenState extends State<AccountScreen> {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: AppTheme.isDark(context) ? Colors.grey.shade800 : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -250,7 +251,7 @@ class _AccountScreenState extends State<AccountScreen> {
           padding: const EdgeInsets.symmetric(vertical: 10),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? AppTheme.cardColor(context) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: isSelected
                 ? [const BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))]
@@ -261,7 +262,7 @@ class _AccountScreenState extends State<AccountScreen> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
-              color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade600,
+              color: isSelected ? const Color(0xFF2563EB) : AppTheme.textSecondary(context),
             ),
           ),
         ),
@@ -279,9 +280,9 @@ class _AccountScreenState extends State<AccountScreen> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cardColor(context),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.black.withOpacity(0.08)),
+            border: Border.all(color: AppTheme.cardBorder(context)),
           ),
           child: Column(
             children: [
@@ -300,7 +301,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Athlete", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                            Text("Athlete", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(color: const Color(0xFF2563EB), borderRadius: BorderRadius.circular(12)),
@@ -309,7 +310,7 @@ class _AccountScreenState extends State<AccountScreen> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text("Total XP: $_totalXP", style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+                        Text("Total XP: $_totalXP", style: TextStyle(fontSize: 13, color: AppTheme.textSecondary(context), fontWeight: FontWeight.w500)),
                       ],
                     ),
                   ),
@@ -322,7 +323,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Next Level Progress", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                      Text("Next Level Progress", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary(context))),
                       Text("${(_levelProgress * 100).toInt()}%", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
                     ],
                   ),
@@ -360,7 +361,7 @@ class _AccountScreenState extends State<AccountScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text("Skill Vault", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            Text("Skill Vault", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
             Text("${unlocked.length} Unlocked", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
           ],
         ),
@@ -370,9 +371,9 @@ class _AccountScreenState extends State<AccountScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.cardColor(context),
+              border: Border.all(color: AppTheme.cardBorder(context)),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.black.withOpacity(0.08)),
             ),
             child: Column(
               children: [
@@ -382,7 +383,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   child: const Icon(Icons.workspace_premium_rounded, size: 36, color: Colors.amber),
                 ),
                 const SizedBox(height: 12),
-                const Text("Vault is Empty", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                Text("Vault is Empty", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
                 const SizedBox(height: 4),
                 Text("Tag habits as skills, then mark them as learned to unlock trophies here!", textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.grey.shade500, height: 1.4)),
               ],
@@ -404,9 +405,9 @@ class _AccountScreenState extends State<AccountScreen> {
               return Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.cardColor(context),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.amber.shade300, width: 1.5),
                 ),
                 child: Stack(
                   children: [
@@ -415,7 +416,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       children: [
                         const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 30),
                         const SizedBox(height: 6),
-                        Text(skill.skillName.isNotEmpty ? skill.skillName : skill.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+                        Text(skill.skillName.isNotEmpty ? skill.skillName : skill.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary(context))),
                         const SizedBox(height: 2),
                         const Text("UNLOCKED 🏆", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.amber)),
                       ],
@@ -456,14 +457,14 @@ class _AccountScreenState extends State<AccountScreen> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cardColor(context),
+            border: Border.all(color: AppTheme.cardBorder(context)),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.black.withOpacity(0.08)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Weekly Day-by-Day Heatmap", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+              Text("Weekly Day-by-Day Heatmap", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
               const SizedBox(height: 4),
               Text("Average completion rates by day of the week", style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
               const SizedBox(height: 20),
@@ -480,7 +481,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
                   return Column(
                     children: [
-                      Text("${avg.toInt()}%", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                      Text("${avg.toInt()}%", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.textSecondary(context))),
                       const SizedBox(height: 6),
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 350),
@@ -493,7 +494,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(dayLabels[dayId]!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                      Text(dayLabels[dayId]!, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
                     ],
                   );
                 }),
@@ -502,7 +503,7 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        const Text("Habit Consistency Matrix", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        Text("Habit Consistency Matrix", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
         const SizedBox(height: 12),
         if (matrix.isEmpty)
           Container(
@@ -523,9 +524,9 @@ class _AccountScreenState extends State<AccountScreen> {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.cardColor(context),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.black.withOpacity(0.06)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,7 +534,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B))),
+                        Text(item['title'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textPrimary(context))),
                         Text("${rate.toInt()}% Overall", style: TextStyle(fontWeight: FontWeight.bold, color: rate >= 80 ? const Color(0xFF2563EB) : Colors.orange, fontSize: 12)),
                       ],
                     ),
@@ -547,9 +548,9 @@ class _AccountScreenState extends State<AccountScreen> {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Text("Active: ${item['currentStreak']}d 🔥", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                        Text("Active: ${item['currentStreak']}d 🔥", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary(context))),
                         const SizedBox(width: 16),
-                        Text("Best: ${item['bestStreak']}d 🏆", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade600)),
+                        Text("Best: ${item['bestStreak']}d 🏆", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary(context))),
                       ],
                     ),
                   ],
@@ -566,16 +567,16 @@ class _AccountScreenState extends State<AccountScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.cardColor(context),
+          border: Border.all(color: AppTheme.cardBorder(context)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withOpacity(0.08)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color, size: 22),
             const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+            Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
             const SizedBox(height: 2),
             Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
           ],
