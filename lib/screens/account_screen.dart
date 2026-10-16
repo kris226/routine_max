@@ -70,7 +70,6 @@ class _AccountScreenState extends State<AccountScreen> {
     return skills;
   }
 
-  // --- SKILL VAULT ACTIONS ---
   void _renameSkill(HabitItem habit) {
     final controller = TextEditingController(text: habit.skillName.isNotEmpty ? habit.skillName : habit.title);
     showDialog(
@@ -136,7 +135,6 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  // --- ANALYTICS TAB COMPUTATIONS ---
   List<Map<String, dynamic>> get _habitMatrix {
     final Map<String, int> timesCompleted = {};
     final Map<String, int> timesScheduled = {};
@@ -362,7 +360,7 @@ class _AccountScreenState extends State<AccountScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text("Skill Vault", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
-            Text("${unlocked.length} Unlocked", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+            Text("${unlocked.length} Unlocked", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textMuted(context))),
           ],
         ),
         const SizedBox(height: 12),
@@ -372,8 +370,8 @@ class _AccountScreenState extends State<AccountScreen> {
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
             decoration: BoxDecoration(
               color: AppTheme.cardColor(context),
-              border: Border.all(color: AppTheme.cardBorder(context)),
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.cardBorder(context)),
             ),
             child: Column(
               children: [
@@ -385,7 +383,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 const SizedBox(height: 12),
                 Text("Vault is Empty", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
                 const SizedBox(height: 4),
-                Text("Tag habits as skills, then mark them as learned to unlock trophies here!", textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.grey.shade500, height: 1.4)),
+                Text("Tag habits as skills, then mark them as learned to unlock trophies here!", textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context), height: 1.4)),
               ],
             ),
           )
@@ -406,8 +404,8 @@ class _AccountScreenState extends State<AccountScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppTheme.cardColor(context),
-                  border: Border.all(color: AppTheme.cardBorder(context)),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.amber.shade300, width: 1.5),
                 ),
                 child: Stack(
                   children: [
@@ -425,7 +423,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       top: -6,
                       right: -6,
                       child: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.grey, size: 18),
+                        icon: Icon(Icons.more_vert, color: AppTheme.textSecondary(context), size: 18),
                         padding: EdgeInsets.zero,
                         onSelected: (value) {
                           if (value == 'rename') _renameSkill(skill);
@@ -458,15 +456,15 @@ class _AccountScreenState extends State<AccountScreen> {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: AppTheme.cardColor(context),
-            border: Border.all(color: AppTheme.cardBorder(context)),
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.cardBorder(context)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("Weekly Day-by-Day Heatmap", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
               const SizedBox(height: 4),
-              Text("Average completion rates by day of the week", style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              Text("Average completion rates by day of the week", style: TextStyle(fontSize: 12, color: AppTheme.textMuted(context))),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -509,7 +507,7 @@ class _AccountScreenState extends State<AccountScreen> {
           Container(
             padding: const EdgeInsets.all(24),
             width: double.infinity,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppTheme.cardColor(context), borderRadius: BorderRadius.circular(16)),
             child: const Center(child: Text("Complete habits over a few days to view matrix stats!", style: TextStyle(color: Colors.grey, fontSize: 13))),
           )
         else
@@ -525,8 +523,8 @@ class _AccountScreenState extends State<AccountScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppTheme.cardColor(context),
-                  border: Border.all(color: AppTheme.cardBorder(context)),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.cardBorder(context)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -568,8 +566,8 @@ class _AccountScreenState extends State<AccountScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.cardColor(context),
-          border: Border.all(color: AppTheme.cardBorder(context)),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.cardBorder(context)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -578,7 +576,7 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 8),
             Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary(context))),
             const SizedBox(height: 2),
-            Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+            Text(title, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textMuted(context))),
           ],
         ),
       ),
